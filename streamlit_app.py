@@ -1,29 +1,57 @@
 import streamlit as st
 import pandas as pd
 
+# データの読み込み（キャッシュで高速化）
+@st.cache_data
+def load_data():
+    df = pd.read_csv("data.csv")
+    df['学生番号'] = df['学生番号'].astype(str).str.zfill(3)
+    return df
+
+df = load_data()
+
 # タイトル
-st.title("課題4　計算問題 正誤判定アプリ")
+st.title("課題4　計算問題 自己チェック")
 
-# CSVファイルから正解データを読み込み
-df = pd.read_csv("data.csv")
+# 入力欄
+student_id = st.text_input("学生番号（下3桁）を入力", max_chars=3)
+answer1 = st.text_input("（1）のあなたの解答　小数点以下第3位を四捨五入（例：1.76）")
+answer2 = st.text_input("（2）のあなたの解答　小数点以下第3位を四捨五入（例：1.98）")
+answer3 = st.text_input("（3）のあなたの解答　小数点以下第3位を四捨五入（例：1.83）")
+answer4 = st.text_input("（4）のあなたの解答　小数点以下第3位を四捨五入（例：2.30）")
 
-# 学生番号入力
-student_id = st.text_input("あなたの学生番号（下3ケタ）を入力してください", max_chars=3)
+# 判定ボタン
+if st.button("判定する"):
+    if not student_id.isdigit() or len(student_id) != 3:
+        st.error("学生番号は3桁の数字で入力してください。")
+    else:
+        record = df[df['学生番号'] == student_id]
+        if record.empty:
+            st.warning("該当する学生番号が見つかりません。")
+        else:
+            try:
+                # ユーザーの解答をfloatに変換（小数第2位で丸め）
+                user_answers = [
+                    round(float(answer1), 2),
+                    round(float(answer2), 2),
+                    round(float(answer3), 2),
+                    round(float(answer4), 2),
+                ]
+                # 正解値の取得（CSVの2列目以降）
+                correct_answers = [
+                    round(float(record.iloc[0][1]), 2),
+                    round(float(record.iloc[0][2]), 2),
+                    round(float(record.iloc[0][3]), 2),
+                    round(float(record.iloc[0][4]), 2),
+                ]
 
-if student_id and student_id in df["学生番号"].astype(str).values:
-    st.write("以下の各問題に答えてください（小数第2位まで）")
+                # 判定処理
+                for i, (user, correct) in enumerate(zip(user_answers, correct_answers), start=1):
+                    result = "正解" if abs(user - correct) < 0.01 else "不正解"
+                    st.success(f"（{i}）：{result}")
 
-    # 回答入力
-    q1 = st.number_input("(1)", step=0.01, format="%.2f")
-    q2 = st.number_input("(2)", step=0.01, format="%.2f")
-    q3 = st.number_input("(3)", step=0.01, format="%.2f")
-    q4 = st.number_input("(4)", step=0.01, format="%.2f")
-
-    if st.button("判定する"):
-        # 入力した学生番号の正解行を取得
-        correct = df[df["学生番号"].astype(str) == student_id].iloc[0]
-
-        # 判定（小数第2位で比較）
+            except ValueError:
+                st.error("すべての解答を数値で入力してください。")
         def is_correct(answer, correct_value):
             return round(answer, 2) == round(correct_value, 2)
 
