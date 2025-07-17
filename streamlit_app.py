@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 
 # タイトル
-st.title("計算問題 正誤判定アプリ")
+st.title("課題4　計算問題 正誤判定アプリ")
 
 # CSVファイルから正解データを読み込み
-df = pd.read_csv("answers.csv")
+df = pd.read_csv("data.csv")
 
 # 学生番号入力
 student_id = st.text_input("あなたの学生番号（下3ケタ）を入力してください", max_chars=3)
